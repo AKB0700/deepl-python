@@ -92,6 +92,7 @@ def test_translate_with_enums(translator):
     assert example_text["DE"] == result.text
 
 
+@needs_auth_key
 def test_invalid_authkey(server):
     translator = deepl.Translator("invalid", server_url=server.server_url)
     with pytest.raises(deepl.exceptions.AuthorizationException):

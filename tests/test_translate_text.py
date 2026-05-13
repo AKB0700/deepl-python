@@ -2,7 +2,12 @@
 # Use of this source code is governed by an MIT
 # license that can be found in the LICENSE file.
 
-from .conftest import example_text, needs_mock_server, needs_real_server
+from .conftest import (
+    example_text,
+    needs_auth_key,
+    needs_mock_server,
+    needs_real_server,
+)
 import deepl
 import pytest
 import re
@@ -123,6 +128,7 @@ def test_invalid_language(translator):
         )
 
 
+@needs_auth_key
 def test_skip_language_check(server):
     translator = deepl.Translator(
         server.auth_key, server_url=server.server_url, skip_language_check=True
@@ -365,6 +371,7 @@ def test_empty_auth_key(server):
         deepl.Translator("", server_url=server.server_url)
 
 
+@needs_auth_key
 def test_invalid_auth_key(server):
     translator = deepl.Translator("invalid", server_url=server.server_url)
     with pytest.raises(
