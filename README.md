@@ -178,6 +178,12 @@ arguments are:
   use, options are `'v1'` and `'v2'`.
 - `style_rule`: specifies a style rule to use with translation, either as a string
   containing the ID of the style rule, or a `StyleRuleInfo` object.
+- `translation_memory`: specifies a translation memory to use with translation,
+  either as a string containing the ID of the translation memory, or a
+  `TranslationMemoryInfo` object.
+- `translation_memory_threshold`: the minimum matching percentage for fuzzy
+  matches from the translation memory (0-100). We recommend a minimum threshold
+  of 75%.
 - `custom_instructions`: an array of instructions to customize the text 
   translation behavior. Up to 10 custom instructions can be specified, each with 
   a maximum of 300 characters.
@@ -644,41 +650,179 @@ target language English (`"EN"`) supports translations to both American English
 ### Style Rules
 
 Style rules allow you to customize your translations using a managed, shared list
-of rules for style, formatting, and more. Multiple style rules can be stored with 
+of rules for style, formatting, and more. Multiple style rules can be stored with
 your account, each with a user-specified name and a uniquely-assigned ID.
 
-#### Creating and managing style rules
+#### Creating a style rule
 
-Currently style rules must be created and managed in the DeepL UI via
-https://www.deepl.com/en/custom-rules. Full CRUD functionality via the APIs will
-come shortly.
+Use `create_style_rule()` to create a new style rule with a name and language
+code. You can optionally provide `configured_rules` and `custom_instructions`.
 
-#### Listing all style rules
+```python
+style_rule = deepl_client.create_style_rule(
+    name="My Style Rule",
+    language="en",
+)
+print(f"Created: {style_rule.name} ({style_rule.style_id})")
+```
+
+#### Retrieving and listing style rules
+
+Use `get_style_rule()` to retrieve a single style rule by ID, or
+`get_all_style_rules()` to list all style rules.
 
 `get_all_style_rules()` returns a list of `StyleRuleInfo` objects
 corresponding to all of your stored style rules. The method accepts optional
 parameters: `page` (page number for pagination, 0-indexed), `page_size` (number
-of items per page), and `detailed` (whether to include detailed configuration
-rules in the `configured_rules` property).
+of items per page), and `detailed`. When `True`, the response includes
+`configured_rules` and `custom_instructions` for each style rule. When `False`
+(default), these fields are omitted for faster responses.
 
 ```python
-# Get all style rules
+# Get a single style rule by ID
+style_rule = deepl_client.get_style_rule("YOUR_STYLE_ID")
+print(f"{style_rule.name} ({style_rule.language})")
+
+# List all style rules
 style_rules = deepl_client.get_all_style_rules()
 for rule in style_rules:
     print(f"{rule.name} ({rule.style_id})")
 
-# Get style rules with detailed configuration
+# List with detailed configuration
 style_rules = deepl_client.get_all_style_rules(detailed=True)
 for rule in style_rules:
     if rule.configured_rules:
         print(f"  Number formatting: {rule.configured_rules.numbers}")
 ```
 
+#### Updating a style rule
+
+Use `update_style_rule_name()` to rename a style rule, and
+`update_style_rule_configured_rules()` to update its configured rules.
+
+```python
+# Update the name
+updated = deepl_client.update_style_rule_name("YOUR_STYLE_ID", "New Name")
+
+# Update configured rules
+updated = deepl_client.update_style_rule_configured_rules(
+    "YOUR_STYLE_ID",
+    {"style_and_tone": {"formality": "formal"}},
+)
+```
+
+#### Managing custom instructions
+
+Custom instructions allow you to add free-text prompts to a style rule. Use
+`create_style_rule_custom_instruction()`, `get_style_rule_custom_instruction()`,
+`update_style_rule_custom_instruction()`, and
+`delete_style_rule_custom_instruction()` to manage them.
+
+```python
+# Create a custom instruction
+instruction = deepl_client.create_style_rule_custom_instruction(
+    "YOUR_STYLE_ID",
+    label="Formal tone",
+    prompt="Always use formal language",
+)
+print(f"Created instruction: {instruction.id}")
+
+# Get a custom instruction
+instruction = deepl_client.get_style_rule_custom_instruction(
+    "YOUR_STYLE_ID", instruction.id
+)
+
+# Update a custom instruction
+updated = deepl_client.update_style_rule_custom_instruction(
+    "YOUR_STYLE_ID",
+    instruction.id,
+    label="Updated label",
+    prompt="Use very formal language",
+)
+
+# Delete a custom instruction
+deepl_client.delete_style_rule_custom_instruction(
+    "YOUR_STYLE_ID", instruction.id
+)
+```
+
+#### Deleting a style rule
+
+Use `delete_style_rule()` to delete a style rule by ID.
+
+```python
+deepl_client.delete_style_rule("YOUR_STYLE_ID")
+```
+
+#### Using a style rule in translations
+
 Style rules can also be used with the command line interface for text translation:
 
 ```bash
 python3 -m deepl --auth-key=YOUR_AUTH_KEY text --to=DE --style-id=YOUR_STYLE_ID "Text to translate"
 ``` 
+
+### Translation Memories
+
+Translation memories allow you to store and reuse previously created translations.
+They can be used in text translation requests to improve consistency by matching
+against stored segments. Multiple translation memories can be stored with your
+account, each with a source language and one or more target languages.
+
+#### Uploading and managing translation memories
+
+Currently translation memories must be uploaded and managed in the DeepL UI via
+https://www.deepl.com/translation-memory. Full CRUD functionality via the APIs will
+come shortly.
+
+#### Listing translation memories
+
+`list_translation_memories()` returns a list of `TranslationMemoryInfo` objects
+for your stored translation memories. The number of translation memories
+returned is controlled by `page_size` (max 25). The method accepts
+optional parameters: `page` (page number for pagination, 0-indexed)
+and `page_size` (number of items per page).
+
+```python
+# List translation memories
+translation_memories = deepl_client.list_translation_memories()
+for tm in translation_memories:
+    print(f"{tm.name} ({tm.translation_memory_id})")
+    print(f"  Source: {tm.source_language}, Targets: {tm.target_languages}")
+    print(f"  Segments: {tm.segment_count}")
+```
+
+#### Using a translation memory in translations
+
+Pass the `translation_memory` parameter to `translate_text()` to use a
+translation memory. You can pass either a string containing the translation
+memory ID, or a `TranslationMemoryInfo` object. Use
+`translation_memory_threshold` to control the minimum matching percentage for
+fuzzy matches (0-100, recommended minimum of 75%).
+
+```python
+# Translate with a translation memory ID
+result = deepl_client.translate_text(
+    "Hello, world!",
+    target_lang="DE",
+    translation_memory="YOUR_TM_ID",
+    translation_memory_threshold=80,
+)
+
+# Or use a TranslationMemoryInfo object
+translation_memories = deepl_client.list_translation_memories()
+result = deepl_client.translate_text(
+    "Hello, world!",
+    target_lang="DE",
+    translation_memory=translation_memories[0],
+)
+```
+
+Translation memories can also be used with the command line interface:
+
+```bash
+python3 -m deepl --auth-key=YOUR_AUTH_KEY text --to=DE --translation-memory-id=YOUR_TM_ID --translation-memory-threshold=75 "Text to translate"
+```
 
 ### Writing a Plugin
 

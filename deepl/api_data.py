@@ -250,42 +250,133 @@ class Language:
     @staticmethod
     def remove_regional_variant(language: Union[str, "Language"]) -> str:
         """Removes the regional variant from a language, e.g. EN-US gives EN"""
-        return str(language).upper()[0:2]
+        dash_index = str(language).find("-")
+        if dash_index != -1:
+            return str(language).upper()[0:dash_index]
+        else:
+            return str(language).upper()
 
+    ACEHNESE = "ace"
+    AFRIKAANS = "af"
+    ARAGONESE = "an"
     ARABIC = "ar"
+    ASSAMESE = "as"
+    AYMARA = "ay"
+    AZERBAIJANI = "az"
+    BASHKIR = "ba"
+    BELARUSIAN = "be"
     BULGARIAN = "bg"
+    BHOJPURI = "bho"
+    BENGALI = "bn"
+    BRETON = "br"
+    BOSNIAN = "bs"
+    CATALAN = "ca"
+    CEBUANO = "ceb"
+    KURDISH_SORANI = "ckb"
     CZECH = "cs"
+    WELSH = "cy"
     DANISH = "da"
     GERMAN = "de"
     GREEK = "el"
     ENGLISH = "en"  # Only usable as a source language
     ENGLISH_BRITISH = "en-GB"  # Only usable as a target language
     ENGLISH_AMERICAN = "en-US"  # Only usable as a target language
+    ESPERANTO = "eo"
     SPANISH = "es"
+    SPANISH_LATIN_AMERICAN = "es-419"  # Only usable as a target language
     ESTONIAN = "et"
+    BASQUE = "eu"
+    PERSIAN = "fa"
     FINNISH = "fi"
     FRENCH = "fr"
+    IRISH = "ga"
+    GALICIAN = "gl"
+    GUARANI = "gn"
+    KONKANI = "gom"
+    GUJARATI = "gu"
+    HAUSA = "ha"
+    HEBREW = "he"
+    HINDI = "hi"
+    CROATIAN = "hr"
+    HAITIAN_CREOLE = "ht"
     HUNGARIAN = "hu"
+    ARMENIAN = "hy"
     INDONESIAN = "id"
+    IGBO = "ig"
+    ICELANDIC = "is"
     ITALIAN = "it"
     JAPANESE = "ja"
+    JAVANESE = "jv"
+    GEORGIAN = "ka"
+    KAZAKH = "kk"
+    KURDISH_KURMANJI = "kmr"
     KOREAN = "ko"
+    KYRGYZ = "ky"
+    LATIN = "la"
+    LUXEMBOURGISH = "lb"
+    LOMBARD = "lmo"
+    LINGALA = "ln"
     LITHUANIAN = "lt"
     LATVIAN = "lv"
+    MAITHILI = "mai"
+    MALAGASY = "mg"
+    MAORI = "mi"
+    MACEDONIAN = "mk"
+    MALAYALAM = "ml"
+    MONGOLIAN = "mn"
+    MARATHI = "mr"
+    MALAY = "ms"
+    MALTESE = "mt"
+    BURMESE = "my"
     NORWEGIAN = "nb"
+    NEPALI = "ne"
     DUTCH = "nl"
+    OCCITAN = "oc"
+    OROMO = "om"
+    PUNJABI = "pa"
+    PANGASINAN = "pag"
+    KAPAMPANGAN = "pam"
     POLISH = "pl"
+    DARI = "prs"
+    PASHTO = "ps"
     PORTUGUESE = "pt"  # Only usable as a source language
     PORTUGUESE_BRAZILIAN = "pt-BR"  # Only usable as a target language
     PORTUGUESE_EUROPEAN = "pt-PT"  # Only usable as a target language
+    QUECHUA = "qu"
     ROMANIAN = "ro"
     RUSSIAN = "ru"
+    SANSKRIT = "sa"
+    SICILIAN = "scn"
     SLOVAK = "sk"
     SLOVENIAN = "sl"
+    ALBANIAN = "sq"
+    SERBIAN = "sr"
+    SESOTHO = "st"
+    SUNDANESE = "su"
     SWEDISH = "sv"
+    SWAHILI = "sw"
+    TAMIL = "ta"
+    TELUGU = "te"
+    TAJIK = "tg"
+    THAI = "th"
+    TURKMEN = "tk"
+    TAGALOG = "tl"
+    TSWANA = "tn"
     TURKISH = "tr"
+    TSONGA = "ts"
+    TATAR = "tt"
     UKRAINIAN = "uk"
+    URDU = "ur"
+    UZBEK = "uz"
+    VIETNAMESE = "vi"
+    WOLOF = "wo"
+    XHOSA = "xh"
+    YIDDISH = "yi"
+    CANTONESE = "yue"
     CHINESE = "zh"
+    CHINESE_SIMPLIFIED = "zh-Hans"  # Only usable as a target language
+    CHINESE_TRADITIONAL = "zh-Hant"  # Only usable as a target language
+    ZULU = "zu"
 
 
 class GlossaryLanguagePair:
@@ -774,10 +865,12 @@ class CustomInstruction:
         label: str,
         prompt: str,
         source_language: Optional[str] = None,
+        id: Optional[str] = None,
     ):
         self._label = label
         self._prompt = prompt
         self._source_language = source_language
+        self._id = id
 
     @staticmethod
     def from_json(json) -> "CustomInstruction":
@@ -786,7 +879,13 @@ class CustomInstruction:
             label=json["label"],
             prompt=json["prompt"],
             source_language=json.get("source_language"),
+            id=json.get("id"),
         )
+
+    @property
+    def id(self) -> Optional[str]:
+        """Returns the unique ID of the custom instruction."""
+        return self._id
 
     @property
     def label(self) -> str:
@@ -906,3 +1005,70 @@ class StyleRuleInfo:
     def custom_instructions(self) -> List[CustomInstruction]:
         """Returns the list of custom instructions."""
         return self._custom_instructions or []
+
+
+class TranslationMemoryInfo:
+    """Information about a translation memory.
+
+    :param translation_memory_id: Unique ID assigned to the translation memory.
+    :param name: User-defined name assigned to the translation memory.
+    :param source_language: Source language code for the translation memory.
+    :param target_languages: List of target language codes available.
+    :param segment_count: Number of segments stored in the translation memory.
+    """
+
+    def __init__(
+        self,
+        translation_memory_id: str,
+        name: str,
+        source_language: str,
+        target_languages: List[str],
+        segment_count: int,
+    ):
+        self._translation_memory_id = translation_memory_id
+        self._name = name
+        self._source_language = source_language
+        self._target_languages = target_languages
+        self._segment_count = segment_count
+
+    def __str__(self) -> str:
+        return (
+            f'TranslationMemory "{self.name}" '
+            f"({self.translation_memory_id})"
+        )
+
+    @staticmethod
+    def from_json(json) -> "TranslationMemoryInfo":
+        """Create TranslationMemoryInfo from the given API JSON object."""
+        return TranslationMemoryInfo(
+            translation_memory_id=json["translation_memory_id"],
+            name=json["name"],
+            source_language=json["source_language"],
+            target_languages=json.get("target_languages", []),
+            segment_count=json.get("segment_count", 0),
+        )
+
+    @property
+    def translation_memory_id(self) -> str:
+        """Returns the unique ID of the translation memory."""
+        return self._translation_memory_id
+
+    @property
+    def name(self) -> str:
+        """Returns the name of the translation memory."""
+        return self._name
+
+    @property
+    def source_language(self) -> str:
+        """Returns the source language code."""
+        return self._source_language
+
+    @property
+    def target_languages(self) -> List[str]:
+        """Returns the list of target language codes."""
+        return self._target_languages
+
+    @property
+    def segment_count(self) -> int:
+        """Returns the number of segments stored."""
+        return self._segment_count
