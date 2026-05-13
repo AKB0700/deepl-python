@@ -15,6 +15,8 @@ import pathlib
 import pytest
 import os
 
+AUTH_KEY = os.getenv("DEEPL_AUTH_KEY") or "test_auth_key"
+
 
 def test_version():
     assert "1.30.0" == deepl.__version__
@@ -141,7 +143,7 @@ def test_server_url_selected_based_on_auth_key(server):
 @patch("requests.adapters.HTTPAdapter.send")
 def test_user_agent(mock_send):
     mock_send.return_value = _build_test_response()
-    translator = deepl.Translator(os.environ["DEEPL_AUTH_KEY"])
+    translator = deepl.Translator(AUTH_KEY)
     translator.translate_text(example_text["EN"], target_lang="DA")
     ua_header = mock_send.call_args[0][0].headers["User-agent"]
     assert "requests/" in ua_header
@@ -152,9 +154,7 @@ def test_user_agent(mock_send):
 @patch("requests.adapters.HTTPAdapter.send")
 def test_user_agent_opt_out(mock_send):
     mock_send.return_value = _build_test_response()
-    translator = deepl.Translator(
-        os.environ["DEEPL_AUTH_KEY"], send_platform_info=False
-    )
+    translator = deepl.Translator(AUTH_KEY, send_platform_info=False)
     translator.translate_text(example_text["EN"], target_lang="DA")
     ua_header = mock_send.call_args[0][0].headers["User-agent"]
     assert "requests/" not in ua_header
@@ -167,7 +167,7 @@ def test_custom_user_agent(mock_send):
     mock_send.return_value = _build_test_response()
     old_user_agent = deepl.http_client.user_agent
     deepl.http_client.user_agent = "my custom user agent"
-    translator = deepl.Translator(os.environ["DEEPL_AUTH_KEY"])
+    translator = deepl.Translator(AUTH_KEY)
     translator.translate_text(example_text["EN"], target_lang="DA")
     ua_header = mock_send.call_args[0][0].headers["User-agent"]
     assert ua_header == "my custom user agent"
@@ -177,9 +177,9 @@ def test_custom_user_agent(mock_send):
 @patch("requests.adapters.HTTPAdapter.send")
 def test_user_agent_with_app_info(mock_send):
     mock_send.return_value = _build_test_response()
-    translator = deepl.Translator(
-        os.environ["DEEPL_AUTH_KEY"],
-    ).set_app_info("sample_python_plugin", "1.0.2")
+    translator = deepl.Translator(AUTH_KEY).set_app_info(
+        "sample_python_plugin", "1.0.2"
+    )
     translator.translate_text(example_text["EN"], target_lang="DA")
     ua_header = mock_send.call_args[0][0].headers["User-agent"]
     assert "requests/" in ua_header
@@ -192,7 +192,7 @@ def test_user_agent_with_app_info(mock_send):
 def test_user_agent_opt_out_with_app_info(mock_send):
     mock_send.return_value = _build_test_response()
     translator = deepl.Translator(
-        os.environ["DEEPL_AUTH_KEY"],
+        AUTH_KEY,
         send_platform_info=False,
     ).set_app_info("sample_python_plugin", "1.0.2")
     translator.translate_text(example_text["EN"], target_lang="DA")
@@ -208,7 +208,7 @@ def test_custom_user_agent_with_app_info(mock_send):
     mock_send.return_value = _build_test_response()
     old_user_agent = deepl.http_client.user_agent
     deepl.http_client.user_agent = "my custom user agent"
-    translator = deepl.Translator(os.environ["DEEPL_AUTH_KEY"]).set_app_info(
+    translator = deepl.Translator(AUTH_KEY).set_app_info(
         "sample_python_plugin", "1.0.2"
     )
     translator.translate_text(example_text["EN"], target_lang="DA")
@@ -222,7 +222,7 @@ def test_custom_user_agent_with_app_info(mock_send):
 def test_user_agent_exception(platform_mock, mock_send):
     mock_send.return_value = _build_test_response()
     platform_mock.side_effect = OSError("mocked test exception")
-    translator = deepl.Translator(os.environ["DEEPL_AUTH_KEY"])
+    translator = deepl.Translator(AUTH_KEY)
     translator.translate_text(example_text["EN"], target_lang="DA")
     ua_header = mock_send.call_args[0][0].headers["User-agent"]
     assert "deepl-python" in ua_header

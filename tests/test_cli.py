@@ -19,6 +19,8 @@ main_function = deepl.__main__
 
 @pytest.fixture
 def runner(server):
+    if not server.is_mock_server and not server.auth_key:
+        pytest.skip("this test requires DEEPL_AUTH_KEY for real server usage")
     env = {
         "DEEPL_SERVER_URL": server.server_url,
         "DEEPL_AUTH_KEY": server.auth_key,
