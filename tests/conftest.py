@@ -177,6 +177,8 @@ def _make_deepl_client(server, auth_key=None, proxy=None):
 def translator(server):
     """Returns a deepl.Translator to use in all tests taking a parameter
     'translator'."""
+    if not server.is_mock_server and not server.auth_key:
+        pytest.skip("this test requires DEEPL_AUTH_KEY for real server usage")
     return _make_translator(server)
 
 
@@ -186,6 +188,8 @@ def translator(server):
 def deepl_client(server):
     """Returns a deepl.DeepLClient to use in all tests taking a parameter
     'deepl_client'."""
+    if not server.is_mock_server and not server.auth_key:
+        pytest.skip("this test requires DEEPL_AUTH_KEY for real server usage")
     return _make_deepl_client(server)
 
 

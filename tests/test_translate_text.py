@@ -124,6 +124,8 @@ def test_invalid_language(translator):
 
 
 def test_skip_language_check(server):
+    if not server.is_mock_server and not server.auth_key:
+        pytest.skip("this test requires DEEPL_AUTH_KEY for real server usage")
     translator = deepl.Translator(
         server.auth_key, server_url=server.server_url, skip_language_check=True
     )
