@@ -41,6 +41,11 @@ class Config(BaseSettings):
         env_prefix = "DEEPL_"
 
 
+def _uses_real_server_without_auth_key() -> bool:
+    config = Config()
+    return config.mock_server_port is None and not config.auth_key
+
+
 @pytest.fixture
 def config():
     return Config()
@@ -477,6 +482,29 @@ needs_real_server = pytest.mark.skipif(
     not (Config().mock_server_port is None),
     reason="this test requires a real server",
 )
+# Decorate test functions with "@needs_auth_key" to skip them if no auth key is
+# configured while using a real server.
+needs_auth_key = pytest.mark.skipif(
+    _uses_real_server_without_auth_key(),
+    reason="this test requires DEEPL_AUTH_KEY when using a real server",
+)
+
+
+def pytest_collection_modifyitems(items):
+    if not _uses_real_server_without_auth_key():
+        return
+
+    auth_required_fixtures = {
+        "translator",
+        "deepl_client",
+        "runner",
+        "cleanup_matching_glossaries",
+        "glossary_manager",
+        "multilingual_glossary_manager",
+    }
+    for item in items:
+        if auth_required_fixtures.intersection(item.fixturenames):
+            item.add_marker(needs_auth_key)
 
 
 example_text = {
